@@ -17,15 +17,15 @@ from tencentcloud.common.exception.tencent_cloud_sdk_exception import \
 from tencentcloud.tiia.v20190529 import tiia_client, models
 import configparser
 
-
 config = configparser.ConfigParser()
 config.read("./config.ini")
 appkey = config['wechat']['ztkappkey']
+tc_id = config['tencentcloud']['id']
+tc_key = config['tencentcloud']['key']
 
 
 def image_identification(img_url):
-    cred = credential.Credential("AKIDf8LIExSecLq54HI3ZswlKds1wf4PaK2h",
-                                 "auzrXxBCKRP8cv0sWAbmhNp1EBsLXVDN")
+    cred = credential.Credential(tc_id, tc_key)
     httpProfile = HttpProfile()
     httpProfile.endpoint = "tiia.tencentcloudapi.com"
 
@@ -51,7 +51,7 @@ def tkl_to_Content(ToUserName, FromUserName, old_tkl):
         res_json['coupon_amount'])
     rebate_ratio = 0.5
     cash_back = zk_final_price * (
-                float(res_json['max_commission_rate']) / 100) * rebate_ratio
+            float(res_json['max_commission_rate']) / 100) * rebate_ratio
     cash_back = round(cash_back, 1)
 
     msg_temp = f"""{res_json['title']}({res_json['tkl']})
