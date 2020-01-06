@@ -65,10 +65,19 @@ def autoreply(request):
             if recMsg.MsgType == 'text':
                 content = recMsg.Content.decode('utf-8')
                 if "这句话" in content:
-                    new_content = function.tkl_to_Content(toUser, fromUser, content)
-                    replyMsg = reply.TextMsg(toUser, fromUser, new_content)
+                    replyMsg = reply.TextMsg(toUser, fromUser, content)
+                    tkl_json = replyMsg.tkl_to_json()
+                    replyMsg.json_to_Content(tkl_json)
                     return replyMsg.send()
                 # todo: 链接转淘口令,无效如何处理
+                elif "id=" in content:
+                    replyMsg = reply.TextMsg(toUser, fromUser, content)
+                    link_json = replyMsg.link_to_json()
+                    replyMsg.json_to_Content(link_json)
+                    return replyMsg.send()
+                else:
+                    replyMsg = reply.TextMsg(toUser, fromUser, "无效输入,请检查后重新输入!")
+                    return replyMsg.send()
             if recMsg.MsgType == 'image':
                 # Issues1: 'ImageMsg' object has no attribute 'MeidaId'
                 # Issues2: 发送图片返回了：qCs1WNDj5p9-FULnsVoNoAIeKQUfLsamrfuXn-Goo32RwoDT8wkhh3QGNjZT0D5a
