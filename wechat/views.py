@@ -4,7 +4,7 @@ from django.shortcuts import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from . import receive
 from . import reply
-from . import function
+import re
 import hashlib
 import configparser
 
@@ -63,18 +63,29 @@ def autoreply(request):
             toUser = recMsg.FromUserName
             fromUser = recMsg.ToUserName
             if recMsg.MsgType == 'text':
+                pat_list = ["\₳", "\$", "\¢", "\₴", "\€", "\₤", "\￥", "\＄", "\《"]
                 content = recMsg.Content.decode('utf-8')
-                if "这句话" in content:
-                    replyMsg = reply.TextMsg(toUser, fromUser, content)
-                    tkl_json = replyMsg.tkl_to_json()
-                    replyMsg.json_to_Content(tkl_json)
-                    return replyMsg.send()
-                # todo: 链接转淘口令,无效如何处理
-                elif "id=" in content:
+                for key in pat_list:
+                    pat = re.compile(key + r"\w{11}" + key)
+                    if len(pat.findall(content)) >= 1:
+                        replyMsg = reply.TextMsg(toUser, fromUser, content)
+                        tkl_json = replyMsg.tkl_to_json()
+                        replyMsg.json_to_Content(tkl_json)
+                        return replyMsg.send()
+                if "id=" in content:
                     replyMsg = reply.TextMsg(toUser, fromUser, content)
                     link_json = replyMsg.link_to_json()
                     replyMsg.json_to_Content(link_json)
                     return replyMsg.send()
+                elif len(content) == 18 and content.isdigit():
+                    # 获取openid
+                    openid = request.GET['openid']
+                elif content.lower() == 'h':
+                    replyMsg = reply.TextMsg(toUser, fromUser, content)
+                    replyMsg.help_msg()
+                    return replyMsg.send()
+                elif content == '查':
+                    pass
                 else:
                     replyMsg = reply.TextMsg(toUser, fromUser, "无效输入,请检查后重新输入!")
                     return replyMsg.send()
@@ -102,3 +113,7 @@ def autoreply(request):
             return reply.Msg().send()
     except Exception as e:
         print(e)
+
+
+def wechat_js_mpxxx(request):
+    return HttpResponse("66hqUSGbYdBXbfKc")
