@@ -13,7 +13,6 @@ import sys
 import datetime
 import time
 
-
 config = configparser.ConfigParser()
 config.read("./config.ini")
 ztkappkey = config['wechat']['ztkappkey']
@@ -49,7 +48,7 @@ def get_orders(start_time, end_time, get_tk_status='0'):
         res_json = json.loads(res.text)
         data = res_json['tbk_sc_order_details_get_response']['data']
         next_page = data['has_next']
-        get_one_page(data, cursor,db)
+        get_one_page(data, cursor, db)
         payload['position_index'] = data['position_index']
         payload['page_no'] = str(int(payload['page_no']) + 1)
     db.close()
@@ -64,17 +63,21 @@ def get_one_page(data, cursor, db):
     for result in results['publisher_order_dto']:
         order_id = result['trade_parent_id']
         item_title = result['item_title']
+        item_num = result['item_num']
+        tb_paid_time = result['tb_paid_time']
         order_id_6 = order_id[-6:]
         pub_share_pre_fee = result['pub_share_pre_fee']
         total_commission_fee = result['total_commission_fee']
         tk_status = result['tk_status']
         # 查询订单是否存在
-        query_sql = "INSERT INTO wechat_orders(order_id, item_title, " \
-                    "order_id_6, pub_share_pre_fee, total_commission_fee, " \
-                    "tk_status) VALUES('%s', '%s', '%s', '%s', '%s', '%s') ON DUPLICATE " \
+        query_sql = "INSERT INTO wechat_orders(order_id, item_title, item_num, " \
+                    "tb_paid_time, order_id_6, pub_share_pre_fee, total_commission_fee, " \
+                    "tk_status) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON DUPLICATE " \
                     "KEY UPDATE pub_share_pre_fee='%s', total_commission_fee='%s', " \
                     "tk_status='%s';" % (
-                        order_id, item_title, order_id_6, pub_share_pre_fee,
+                        order_id, item_title, item_num, tb_paid_time,
+                        order_id_6,
+                        pub_share_pre_fee,
                         total_commission_fee, tk_status, pub_share_pre_fee,
                         total_commission_fee, tk_status)
         try:
@@ -116,8 +119,8 @@ if __name__ == '__main__':
         while end_time[:10] != datetime.datetime.today().strftime('%Y-%m-%d'):
             get_orders(start_time, end_time, get_tk_status='3')
             start_time = (datetime.datetime.strptime(end_time,
-                                                 "%Y-%m-%d %H:%M:%S") - datetime.timedelta(
-            minutes=-1)).strftime("%Y-%m-%d %H:%M:%S")
+                                                     "%Y-%m-%d %H:%M:%S") - datetime.timedelta(
+                minutes=-1)).strftime("%Y-%m-%d %H:%M:%S")
             end_time = (datetime.datetime.strptime(start_time,
                                                    '%Y-%m-%d %H:%M:%S') - datetime.timedelta(
                 minutes=-19)).strftime("%Y-%m-%d %H:%M:%S")

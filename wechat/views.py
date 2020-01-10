@@ -1,9 +1,12 @@
 # coding=utf-8
+from decimal import Decimal
+
 from django.shortcuts import render
 from django.shortcuts import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from . import receive
 from . import reply
+from . import models
 import re
 import hashlib
 import configparser
@@ -63,7 +66,8 @@ def autoreply(request):
             toUser = recMsg.FromUserName
             fromUser = recMsg.ToUserName
             if recMsg.MsgType == 'text':
-                pat_list = ["\₳", "\$", "\¢", "\₴", "\€", "\₤", "\￥", "\＄", "\《"]
+                pat_list = ["\₳", "\$", "\¢", "\₴", "\€", "\₤", "\￥", "\＄",
+                            "\《"]
                 content = recMsg.Content.decode('utf-8')
                 for key in pat_list:
                     pat = re.compile(key + r"\w{11}" + key)
@@ -80,6 +84,22 @@ def autoreply(request):
                 elif len(content) == 18 and content.isdigit():
                     # 获取openid
                     openid = request.GET['openid']
+                    order_res = models.Orders.objects.filter(order_id=content)
+                    if len(order_res) > 0:
+                        models.Orders.objects.filter(order_id=content).update(
+                            openid=openid)
+                        item_num = order_res[0].item_num
+                        pub_share_pre_fee = float(
+                            order_res[0].pub_share_pre_fee) * 0.5
+                        pspf = Decimal(str(pub_share_pre_fee)).quantize(
+                            Decimal('0.00'))
+                        replyMsg = reply.TextMsg(toUser, fromUser, content)
+                        replyMsg.order_to_Content(item_num, pspf)
+                        return replyMsg.send()
+                    else:
+                        replyMsg = reply.TextMsg(toUser, fromUser,
+                                                 "未查询到该订单,请检查订单号是否有误,或1分钟后重新查询!")
+                        return replyMsg.send()
                 elif content.lower() == 'h':
                     replyMsg = reply.TextMsg(toUser, fromUser, content)
                     replyMsg.help_msg()

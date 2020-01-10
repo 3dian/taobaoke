@@ -8,6 +8,10 @@ class Orders(models.Model):
     order_id = models.CharField(max_length=36, unique=True)
     # 商品标题
     item_title = models.CharField(max_length=70)
+    # 商品数量
+    item_num = models.IntegerField()
+    # 付款时间
+    tb_paid_time = models.CharField(max_length=36)
     # 订单号后6位(淘宝id)
     order_id_6 = models.CharField(max_length=12)
     # 预估收入

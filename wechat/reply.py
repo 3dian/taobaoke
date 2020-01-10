@@ -116,7 +116,7 @@ https://51lqsq.com 浏览器打开查券网址，用这里的囗令链接下单�
 ----------------------------
 复制我打开👉淘寳👈领券购买
 付款后1分钟发来订单号进行确认
-收货后发来【提现】二字领取红包
+收货后21号发送【提现】领取红包
 ----------------------------
 ❗付款处不要用抵扣的红包，如果用了就没我们这里的红包了"""
         # 看详细介绍发来个？号。查券网 http://q.wycdym1008.xyz
@@ -127,6 +127,15 @@ https://51lqsq.com 浏览器打开查券网址，用这里的囗令链接下单�
         self.__dict['Content'] = msg_temp
 
         # return msg_temp
+
+    def order_to_Content(self, item_num, pub_share_pre_fee):
+        order_msg = f"""亲，此订单共{item_num}件商品，已记入{pub_share_pre_fee}元，确认收货后21号可来提现祝您开心！[玫瑰]
+------------------
+提现：陶宝里确认收货之后的第一个21号,发来【提现】2字，这里就会自动发微信红包
+
+查明细发来1个字：查
+看详细介绍发英文 h"""
+        self.__dict['Content'] = order_msg
 
     def send(self):
         XmlForm = """
