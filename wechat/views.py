@@ -109,7 +109,8 @@ def autoreply(request):
                 elif content == '查':
                     openid = request.GET['openid']
                     settle_up_status = models.Orders.objects.filter(
-                        Q(openid=openid) & Q(settle_up=False))
+                        Q(openid=openid) & Q(settle_up=None))
+                    # settle_up_status = models.Orders.objects.filter(openid=openid)
                     titles = ''
                     total = 0.00
                     if len(settle_up_status) > 0:
@@ -127,7 +128,7 @@ def autoreply(request):
                         return replyMsg.send()
                     else:
                         replyMsg = reply.TextMsg(toUser, fromUser,
-                                                 "未查询到订单,或已全部结算,如确有未结算订单,请检查订单号是否有误,或1分钟后重新查询!")
+                                                 "未查询到订单,或已全部结算,如确有未结算订单,请检查订单号是否有误,或1分钟后重新查询!(输入'查'之前请先输入一次有效订单号,用于绑定身份.)")
                         return replyMsg.send()
                 elif content[:2] == 'bd':
                     openid = request.GET['openid']
