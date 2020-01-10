@@ -1,5 +1,6 @@
 from django.db import models
 
+
 # Create your models here.
 class Orders(models.Model):
     # 微信openid
@@ -20,5 +21,9 @@ class Orders(models.Model):
     total_commission_fee = models.CharField(max_length=10)
     # 订单状态 3：订单结算，12：订单付款， 13：订单失效，14：订单成功
     tk_status = models.IntegerField()
-
-
+    # 是否向用户结算
+    settle_up = models.CharField(max_length=10, null=True, blank=True)
+    # 支付宝手机或邮箱
+    alipay = models.CharField(max_length=36, blank=True, null=True)
+    # 姓名
+    name = models.CharField(max_length=12, blank=True, null=True)

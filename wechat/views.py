@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.shortcuts import render
 from django.shortcuts import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 from . import receive
 from . import reply
 from . import models
@@ -69,6 +70,7 @@ def autoreply(request):
                 pat_list = ["\₳", "\$", "\¢", "\₴", "\€", "\₤", "\￥", "\＄",
                             "\《"]
                 content = recMsg.Content.decode('utf-8')
+
                 for key in pat_list:
                     pat = re.compile(key + r"\w{11}" + key)
                     if len(pat.findall(content)) >= 1:
@@ -105,7 +107,55 @@ def autoreply(request):
                     replyMsg.help_msg()
                     return replyMsg.send()
                 elif content == '查':
-                    pass
+                    openid = request.GET['openid']
+                    settle_up_status = models.Orders.objects.filter(
+                        Q(openid=openid) & Q(settle_up=False))
+                    titles = ''
+                    total = 0.00
+                    if len(settle_up_status) > 0:
+                        for settle_up in settle_up_status:
+                            per = float(settle_up.pub_share_pre_fee) / 2
+                            per = Decimal(str(per)).quantize(
+                                Decimal('0.00'))
+                            total += float(per)
+                            pspf = str(per)
+                            title = '\n' + settle_up.item_title[
+                                           :7] + '**: ' + pspf + '元'
+                            titles += title
+                        replyMsg = reply.TextMsg(toUser, fromUser, content)
+                        replyMsg.settle_up_to_Content(total, titles)
+                        return replyMsg.send()
+                    else:
+                        replyMsg = reply.TextMsg(toUser, fromUser,
+                                                 "未查询到订单,或已全部结算,如确有未结算订单,请检查订单号是否有误,或1分钟后重新查询!")
+                        return replyMsg.send()
+                elif content[:2] == 'bd':
+                    openid = request.GET['openid']
+                    content_list = re.split(r' ', content, maxsplit=2)
+                    phone = re.search(r'(^[1]([3-9])[0-9]{9})', content_list[1],
+                                      re.M | re.I)
+                    email = re.search(
+                        r'(^([A-Za-z0-9_\-.])+@([A-Za-z0-9_\-.])+\.([A-Za-z]{2,4}))',
+                        content_list[1], re.M)
+                    name = re.search(
+                        r'^[\u4E00-\u9FA5A-Za-z\s]+(·[\u4E00-\u9FA5A-Za-z]+)*$',
+                        content_list[2])
+                    alipay = ''
+                    msg = "无效输入,请按照'bd 支付宝账号 姓名'的格式输入(不含引号)."
+                    if (phone and name) or (email and name):
+                        if phone is None and email is not None:
+                            alipay = email.group()
+                            msg = '绑定成功, 返款将于21号自动结算至您的支付宝账户,并将明细发送至您的邮箱,请注意查收.'
+                        elif email is None and phone is not None:
+                            alipay = phone.group()
+                            msg = '绑定成功'
+                        models.Orders.objects.filter(openid=openid).update(
+                            alipay=alipay, name=name.group())
+                        replyMsg = reply.TextMsg(toUser, fromUser, msg)
+                        return replyMsg.send()
+                    else:
+                        replyMsg = reply.TextMsg(toUser, fromUser, msg)
+                        return replyMsg.send()
                 else:
                     replyMsg = reply.TextMsg(toUser, fromUser, "无效输入,请检查后重新输入!")
                     return replyMsg.send()

@@ -112,12 +112,13 @@ https://51lqsq.com 浏览器打开查券网址，用这里的囗令链接下单�
 淘口令: {res_json['tkl']}
 😁领劵【{res_json['coupon_amount']}】元
 💰劵后【{zk_final_price}】元
-🧧预估返红包【{cash_back}】元
+🧧预估返还【{cash_back}】元
 ----------------------------
 复制我打开👉淘寳👈领券购买
 付款后1分钟发来订单号进行确认
-收货后21号发送【提现】领取红包
+收货后21号系统自动结算返还金额
 ----------------------------
+❗新用户请务必绑定支付宝账户,否则无法收到返款,绑定方法请发送 h 进行查看.
 ❗付款处不要用抵扣的红包，如果用了就没我们这里的红包了"""
         # 看详细介绍发来个？号。查券网 http://q.wycdym1008.xyz
         # tkl_dict = dict()
@@ -137,7 +138,29 @@ https://51lqsq.com 浏览器打开查券网址，用这里的囗令链接下单�
 看详细介绍发英文 h"""
         self.__dict['Content'] = order_msg
 
+    def settle_up_to_Content(self, total, titles):
+        settle_up_msg = f"""未结算：【{total}】元
+{titles}
+-------------------
+提现：陶宝里确认收货之后的第一个21号,发来【提现】2字，这里就会自动发微信红包
+
+查明细发来1个字：查
+看详细介绍发英文 h"""
+        self.__dict['Content'] = settle_up_msg
+
     def send(self):
+        XmlForm = """
+        <xml>
+        <ToUserName><![CDATA[{ToUserName}]]></ToUserName>
+        <FromUserName><![CDATA[{FromUserName}]]></FromUserName>
+        <CreateTime>{CreateTime}</CreateTime>
+        <MsgType><![CDATA[text]]></MsgType>
+        <Content><![CDATA[{Content}]]></Content>
+        </xml>
+        """
+        return XmlForm.format(**self.__dict)
+
+    def send2(self):
         XmlForm = """
         <xml>
         <ToUserName><![CDATA[{ToUserName}]]></ToUserName>

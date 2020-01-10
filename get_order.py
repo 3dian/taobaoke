@@ -12,9 +12,12 @@ import pymysql
 import sys
 import datetime
 import time
+import os
 
+base_dir = os.path.dirname(__file__)
+# print(base_dir)
 config = configparser.ConfigParser()
-config.read("./config.ini")
+config.read("/root/www/taobaoke/config.ini")
 ztkappkey = config['wechat']['ztkappkey']
 mysql_pass = config['mysql']['password']
 sid = config['wechat']['sid']
@@ -85,19 +88,22 @@ def get_one_page(data, cursor, db):
             cursor.execute(query_sql)
             # 执行sql语句
             db.commit()
-        except:
+        except Exception as e:
+            print(e)
             # 发生错误时回滚
             db.rollback()
 
 
 if __name__ == '__main__':
-    # get_orders('2020-01-07 23:00:00','2020-01-08 00:00:00')
+    get_orders('2020-01-07 23:00:00','2020-01-08 00:00:00')
 
     if sys.argv[1] == 'min':
         start_time = (datetime.datetime.now() - datetime.timedelta(
             minutes=20)).strftime("%Y-%m-%d %H:%M:%S")
         end_time = (datetime.datetime.now()).strftime("%Y-%m-%d %H:%M:%S")
         get_orders(start_time, end_time)
+        print(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+              '订单查询成功!')
     if sys.argv[1] == 'day':
         start_time = (datetime.datetime.today() - datetime.timedelta(
             days=1)).strftime("%Y-%m-%d 00:00:00")
@@ -110,6 +116,9 @@ if __name__ == '__main__':
                                                      "%Y-%m-%d %H:%M:%S") - datetime.timedelta(
                 minutes=-1)).strftime("%Y-%m-%d %H:%M:%S")
             time.sleep(10)
+        print(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+              (datetime.datetime.today() - datetime.timedelta(days=1)).strftime(
+                  "%Y-%m-%d"), '订单查询成功!')
     if sys.argv[1] == 'mon':
         start_time = (datetime.datetime.today() - datetime.timedelta(
             days=30)).strftime("%Y-%m-20 00:00:00")
@@ -125,3 +134,6 @@ if __name__ == '__main__':
                                                    '%Y-%m-%d %H:%M:%S') - datetime.timedelta(
                 minutes=-19)).strftime("%Y-%m-%d %H:%M:%S")
             time.sleep(5)
+        print(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), (
+                datetime.datetime.today() - datetime.timedelta(
+            days=30)).strftime("%Y-%m"), '已结算订单查询成功!')
