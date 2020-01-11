@@ -73,21 +73,40 @@ def get_one_page(data, cursor, db):
         total_commission_fee = result['total_commission_fee']
         tk_status = result['tk_status']
         # 查询订单是否存在
-        query_sql = "INSERT INTO wechat_orders(order_id, item_title, item_num, " \
-                    "tb_paid_time, order_id_6, pub_share_pre_fee, total_commission_fee, " \
-                    "tk_status) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON DUPLICATE " \
-                    "KEY UPDATE pub_share_pre_fee='%s', total_commission_fee='%s', " \
-                    "tk_status='%s';" % (
-                        order_id, item_title, item_num, tb_paid_time,
-                        order_id_6,
-                        pub_share_pre_fee,
-                        total_commission_fee, tk_status, pub_share_pre_fee,
-                        total_commission_fee, tk_status)
+        update_sql = "UPDATE wechat_orders SET pub_share_pre_fee='%s', total_commission_fee='%s', tk_status='%s' WHERE order_id='%s'" % (
+            pub_share_pre_fee, total_commission_fee, tk_status, order_id)
+        insert_sql = "INSERT INTO wechat_orders(order_id, item_title, item_num, " \
+                     "tb_paid_time, order_id_6, pub_share_pre_fee, total_commission_fee, " \
+                     "tk_status) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')" % (
+                         order_id, item_title, item_num, tb_paid_time,
+                         order_id_6,
+                         pub_share_pre_fee,
+                         total_commission_fee, tk_status)
+
+        sql = 'select openid, alipay, name from wechat_orders where order_id_6=%s ' \
+              'and alipay IS NOT NULL and name IS NOT NULL and openid IS NOT NULL;' % (
+                  order_id_6)
         try:
             # 执行sql语句
-            cursor.execute(query_sql)
-            # 执行sql语句
-            db.commit()
+            find_user_info_res = cursor.execute(sql)
+            if find_user_info_res > 0:
+                a = cursor.fetchone()
+                openid, alipay, name = a
+                insert_sql = "INSERT INTO wechat_orders(openid, order_id, item_title, item_num, " \
+                             "tb_paid_time, order_id_6, pub_share_pre_fee, total_commission_fee, " \
+                             "tk_status,alipay, name) VALUES('%s','%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s', '%s')" % (
+                                 openid, order_id, item_title, item_num,
+                                 tb_paid_time,
+                                 order_id_6,
+                                 pub_share_pre_fee,
+                                 total_commission_fee, tk_status, alipay, name)
+            update_res = cursor.execute(update_sql)
+            if update_res > 0:
+                # 执行sql语句
+                db.commit()
+            else:
+                cursor.execute(insert_sql)
+                db.commit()
         except Exception as e:
             print(e)
             # 发生错误时回滚
@@ -95,7 +114,7 @@ def get_one_page(data, cursor, db):
 
 
 if __name__ == '__main__':
-    get_orders('2020-01-07 23:00:00','2020-01-08 00:00:00')
+    # get_orders('2020-01-07 23:00:00', '2020-01-08 00:00:00')
 
     if sys.argv[1] == 'min':
         start_time = (datetime.datetime.now() - datetime.timedelta(
