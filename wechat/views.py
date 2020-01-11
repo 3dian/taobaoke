@@ -1,5 +1,6 @@
 # coding=utf-8
 from decimal import Decimal
+from uu import decode
 
 from django.shortcuts import render
 from django.shortcuts import HttpResponse
@@ -35,7 +36,7 @@ def check_signature(request):
         echostr = request.GET.get('echostr', '')
         # 微信公众号处配置的token
         # token = str("Txy159wx")
-
+        # 发送图文
         hashlist = [token, timestamp, nonce]
         hashlist.sort()
         print("[token, timestamp, nonce]: ", hashlist)
@@ -70,7 +71,6 @@ def autoreply(request):
                 pat_list = ["\₳", "\$", "\¢", "\₴", "\€", "\₤", "\￥", "\＄",
                             "\《"]
                 content = recMsg.Content.decode('utf-8')
-
                 for key in pat_list:
                     pat = re.compile(key + r"\w{11}" + key)
                     if len(pat.findall(content)) >= 1:
@@ -103,9 +103,15 @@ def autoreply(request):
                                                  "未查询到该订单,请检查订单号是否有误,或1分钟后重新查询!")
                         return replyMsg.send()
                 elif content.lower() == 'h':
-                    replyMsg = reply.TextMsg(toUser, fromUser, content)
-                    replyMsg.help_msg()
-                    return replyMsg.send()
+                    title = '公众号使用指南'
+                    description = '本公众号使用方法详解（使用前必读）'
+                    picurl = 'https://mmbiz.qpic.cn/mmbiz_jpg/UtuwdA6FibpLd53ibqwTia5av10SVAFiclww434Ig57c3nVcgAqg1ObfghKSDJ3CyFwv058icJYQib4IvhicpjqcqdRHQ/0?wx_fmt=jpeg'
+                    url = 'http://mp.weixin.qq.com/s?__biz=Mzg5MTAyNDgzMg==&mid=100000036&idx=1&sn=98003d6e4a1e059b6babf290b3f65dfd&chksm=4fd2e58b78a56c9d1230bcea6d00b434990487f4b44395581b37d8ee0a1f6952825fd29eb770#rd'
+                    if recMsg.Event == b'subscribe':
+                        replyMsg = reply.EventMsg(toUser, fromUser, title,
+                                                  description,
+                                                  picurl, url)
+                        return replyMsg.send()
                 elif content == '查':
                     openid = request.GET['openid']
                     settle_up_status = models.Orders.objects.filter(
@@ -150,8 +156,11 @@ def autoreply(request):
                         elif email is None and phone is not None:
                             alipay = phone.group()
                             msg = '绑定成功'
-                        models.Orders.objects.filter(openid=openid).update(
-                            alipay=alipay, name=name.group())
+                        if models.Orders.objects.filter(openid=openid) == 0:
+                            msg = '您是新用户,未使用本公众号优惠券下过单,请使用本公众号的优惠券下单一次之后再来绑定支付宝.'
+                        else:
+                            models.Orders.objects.filter(openid=openid).update(
+                                alipay=alipay, name=name.group())
                         replyMsg = reply.TextMsg(toUser, fromUser, msg)
                         return replyMsg.send()
                     else:
@@ -178,6 +187,18 @@ def autoreply(request):
                 return replyMsg.send()
             else:
                 return reply.Msg().send()
+        elif isinstance(recMsg, receive.MsgEvent):
+            toUser = recMsg.FromUserName
+            fromUser = recMsg.ToUserName
+            title = '公众号使用指南'
+            description = '本公众号使用方法详解（使用前必读）'
+            picurl = 'https://mmbiz.qpic.cn/mmbiz_jpg/UtuwdA6FibpLd53ibqwTia5av10SVAFiclww434Ig57c3nVcgAqg1ObfghKSDJ3CyFwv058icJYQib4IvhicpjqcqdRHQ/0?wx_fmt=jpeg'
+            url = 'http://mp.weixin.qq.com/s?__biz=Mzg5MTAyNDgzMg==&mid=100000036&idx=1&sn=98003d6e4a1e059b6babf290b3f65dfd&chksm=4fd2e58b78a56c9d1230bcea6d00b434990487f4b44395581b37d8ee0a1f6952825fd29eb770#rd'
+            if recMsg.Event == b'subscribe':
+                # event = recMsg.Event.decode('utf-8')
+                replyMsg = reply.EventMsg(toUser, fromUser, title, description,
+                                          picurl, url)
+                return replyMsg.send()
         else:
             print("暂不处理")
             # return "success"

@@ -23,6 +23,22 @@ def parse_xml(webData):
         return VoiceMsg(xmlData)
 
 
+class MsgEvent(object):
+    def __init__(self, xmlData):
+        self.ToUserName = xmlData.find('ToUserName').text
+        self.FromUserName = xmlData.find('FromUserName').text
+        self.CreateTime = xmlData.find('CreateTime').text
+        self.MsgType = xmlData.find('MsgType').text
+        self.Event = xmlData.find('Event').text
+
+
+
+class EventMsg(MsgEvent):
+    def __init__(self, xmlData):
+        MsgEvent.__init__(self, xmlData)
+        self.Event = xmlData.find('Event').text.encode('utf-8')
+
+
 class Msg(object):
     def __init__(self, xmlData):
         self.ToUserName = xmlData.find('ToUserName').text
@@ -30,7 +46,6 @@ class Msg(object):
         self.CreateTime = xmlData.find('CreateTime').text
         self.MsgType = xmlData.find('MsgType').text
         self.MsgId = xmlData.find('MsgId').text
-
 
 class TextMsg(Msg):
     def __init__(self, xmlData):
