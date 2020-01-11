@@ -1,6 +1,5 @@
 # coding=utf-8
 from decimal import Decimal
-from uu import decode
 
 from django.shortcuts import render
 from django.shortcuts import HttpResponse
@@ -152,7 +151,7 @@ def autoreply(request):
                     if (phone and name) or (email and name):
                         if phone is None and email is not None:
                             alipay = email.group()
-                            msg = '绑定成功, 返款将于21号自动结算至您的支付宝账户,并将明细发送至您的邮箱,请注意查收.'
+                            msg = '绑定成功, 返款将于22号自动结算至您的支付宝账户,并将明细发送至您的邮箱,请注意查收.'
                         elif email is None and phone is not None:
                             alipay = phone.group()
                             msg = '绑定成功'
@@ -204,7 +203,12 @@ def autoreply(request):
             # return "success"
             return reply.Msg().send()
     except Exception as e:
+        toUser = recMsg.FromUserName
+        fromUser = recMsg.ToUserName
         print(e)
+        if e.args[0] == 'tbk_privilege_get_response':
+            replyMsg = reply.TextMsg(toUser, fromUser, '该宝贝没有优惠券及返利.')
+            return replyMsg.send()
 
 
 def wechat_js_mpxxx(request):
